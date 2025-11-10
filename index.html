@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Территория кофе</title>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: black;
+    color: white;
+}
+h1 {
+    margin-top: 20px;
+    font-size: 2em;
+    color: white;
+}
+#slot-wrapper {
+    margin: 40px auto;
+    width: 600px; /* шире барабан */
+    height: 200px;
+    overflow: hidden;
+    border: 4px solid white;
+    border-radius: 10px;
+    position: relative;
+    background-color: #111;
+    /* Размытие по бокам */
+    mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, rgba(0,0,0,0));
+    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 15%, rgba(0,0,0,1) 85%, rgba(0,0,0,0));
+}
+#slot {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+}
+#images {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+#images img {
+    width: 600px; /* шире картинка под новый барабан */
+    height: 200px;
+    object-fit: cover;
+}
+#arrow {
+    width: 0;
+    height: 0;
+    border-left: 30px solid transparent;
+    border-right: 30px solid transparent;
+    border-top: 25px solid red;
+    position: absolute;
+    top: -25px;
+    left: calc(50% - 30px);
+    z-index: 10;
+}
+button {
+    margin-top: 20px;
+    padding: 12px 25px;
+    font-size: 1.2em;
+    font-weight: bold;
+    background-color: white;
+    color: black;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+button:hover {
+    background-color: #ffebcd;
+}
+button:disabled {
+    background-color: #666;
+    color: #ccc;
+    cursor: not-allowed;
+}
+@keyframes bounce {
+    0% { transform: translateY(0); }
+    30% { transform: translateY(-15px); }
+    50% { transform: translateY(0); }
+    70% { transform: translateY(-7px); }
+    100% { transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<h1>Территория кофе</h1>
+
+<div id="slot-wrapper">
+    <div id="slot">
+        <div id="arrow"></div>
+        <div id="images"></div>
+    </div>
+</div>
+
+<button id="spinButton">☕ Испытать удачу 🔥</button>
+
+<script>
+// Призы с новыми шансами
+const prizes = [
+    {name: "Скидка 0%", chance: 88, img: "discount0.png"},
+    {name: "Скидка 10%", chance: 8, img: "discount10.png"},
+    {name: "Скидка 20%", chance: 2, img: "discount20.png"},
+    {name: "Скидка 30%", chance: 1, img: "discount30.png"},
+    {name: "Скидка 50%", chance: 0.5, img: "discount50.png"},
+    {name: "Скидка 100%", chance: 0.5, img: "discount100.png"}
+];
+
+const imagesContainer = document.getElementById('images');
+const spinButton = document.getElementById('spinButton');
+const IMG_WIDTH = 600; // ширина нового барабана
+
+// Функция перемешивания массива
+function shuffle(array) {
+    let a = array.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+}
+
+// выбор приза с шансами
+function getPrize() {
+    const total = prizes.reduce((sum, p) => sum + p.chance, 0);
+    const rand = Math.random() * total;
+    let cumulative = 0;
+    for (let p of prizes) {
+        cumulative += p.chance;
+        if (rand < cumulative) return p;
+    }
+    return prizes[0];
+}
+
+spinButton.addEventListener('click', () => {
+    spinButton.disabled = true;
+
+    const shuffledPrizes = shuffle(prizes);
+
+    // создаём полоску из 10 повторов перемешанных призов
+    imagesContainer.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+        shuffledPrizes.forEach(p => {
+            const img = document.createElement('img');
+            img.src = p.img;
+            img.alt = p.name;
+            imagesContainer.appendChild(img);
+        });
+    }
+
+    const prize = getPrize();
+
+    // индекс выигрышного приза в первом повторе перемешанного массива
+    const prizeIndexInShuffle = shuffledPrizes.findIndex(p => p.name === prize.name);
+    const totalImages = imagesContainer.children.length;
+    const middleIndex = Math.floor(totalImages / 2);
+    const finalIndex = middleIndex + prizeIndexInShuffle;
+
+    const offset = -finalIndex * IMG_WIDTH;
+
+    // плавная прокрутка
+    imagesContainer.style.transition = 'transform 7s cubic-bezier(0.22, 1, 0.36, 1)';
+    imagesContainer.style.transform = `translateX(${offset}px)`;
+
+    setTimeout(() => {
+        // оставляем только выигрышную картинку
+        imagesContainer.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = prize.img;
+        img.alt = prize.name;
+        img.style.animation = 'bounce 0.8s';
+        imagesContainer.appendChild(img);
+
+        imagesContainer.style.transform = 'translateX(0)';
+        imagesContainer.style.transition = 'none';
+        spinButton.disabled = false;
+    }, 7200);
+});
+</script>
+
+</body>
+</html>
